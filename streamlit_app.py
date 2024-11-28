@@ -5,87 +5,159 @@ from giskard.scanner import scan
 import pandas as pd
 import json
 
-st.set_page_config(page_title="Giskard Scanner App", layout="wide")
+# Configuration du style personnalisé
+st.set_page_config(
+    page_title="Giskard Scanner App",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-st.title("🔍 Giskard Model Scanner")
-
-# Sidebar pour les configurations
-with st.sidebar:
-    st.header("Configuration")
-    scan_type = st.selectbox(
-        "Type de modèle",
-        ["LLM", "Tabular", "NLP", "Vision"]
-    )
-
-    st.write("### ℹ️ Info")
-    st.write(f"Giskard version: {giskard.__version__}")
-
-# Layout principal en deux colonnes
-col1, col2 = st.columns(2)
-
-with col1:
-    st.write("### 📤 Chargement des données")
-    uploaded_file = st.file_uploader("Charger un dataset (CSV)", type=['csv'])
-
-    if uploaded_file:
-        try:
-            df = pd.read_csv(uploaded_file)
-            st.write("Aperçu des données :")
-            st.dataframe(df.head(), use_container_width=True)
-            
-            # Sélection des colonnes
-            if len(df.columns) > 0:
-                target_column = st.selectbox(
-                    "Sélectionnez la colonne cible",
-                    df.columns
-                )
-        except Exception as e:
-            st.error(f"Erreur lors du chargement du fichier: {str(e)}")
-
-with col2:
-    st.write("### ⚙️ Paramètres du scan")
+# CSS personnalisé inspiré de Dinootoo
+st.markdown("""
+    <style>
+    /* Couleurs principales */
+    :root {
+        --primary-color: #FF6B00;
+        --secondary-color: #2D2D2D;
+        --background-color: #FFFFFF;
+        --text-color: #1E1E1E;
+    }
     
-    if uploaded_file:
-        if st.button("🚀 Lancer le scan"):
-            with st.spinner('Scan en cours...'):
-                try:
-                    # Création du dataset Giskard
-                    dataset = Dataset(
-                        df,
-                        target=target_column
-                    )
-                    
-                    # Pour l'exemple, nous utilisons un scan basique
-                    # Dans un cas réel, vous devrez configurer votre modèle
-                    results = scan(None, dataset)
-                    
-                    st.success("✅ Scan terminé!")
-                    
-                    # Affichage des résultats
-                    st.write("### 📊 Résultats")
-                    if isinstance(results, dict):
-                        st.json(results)
-                    else:
-                        st.write(results)
-                    
-                except Exception as e:
-                    st.error(f"❌ Erreur pendant le scan: {str(e)}")
+    /* Header */
+    .stApp > header {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        background-color: var(--background-color);
+    }
+    
+    /* Boutons */
+    .stButton>button {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 4px;
+        border: none;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+    }
+    
+    /* Cards */
+    .element-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    
+    /* Titres */
+    h1, h2, h3 {
+        color: var(--secondary-color);
+        font-weight: 600;
+    }
+    
+    /* Menu de navigation */
+    .stSelectbox label {
+        color: var(--text-color);
+        font-weight: 500;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-# Section d'aide
-with st.expander("📖 Guide d'utilisation"):
-    st.write("""
-    1. **Configuration**
-       - Sélectionnez le type de modèle dans la barre latérale
-       
-    2. **Chargement des données**
-       - Chargez votre fichier CSV
-       - Sélectionnez la colonne cible
-       
-    3. **Scan**
-       - Cliquez sur 'Lancer le scan' pour analyser
-       - Les résultats s'afficheront automatiquement
-    """)
+# Header personnalisé
+st.markdown("""
+    <div style="display: flex; align-items: center; background-color: #2D2D2D; padding: 1rem; margin-bottom: 2rem;">
+        <img src="https://your-logo-url.com" style="height: 40px; margin-right: 1rem;"/>
+        <h1 style="color: white; margin: 0;">Giskard Scanner App</h1>
+    </div>
+""", unsafe_allow_html=True)
+
+# Navigation principale
+tabs = st.tabs(["📊 Scanner", "⚙️ Configurations", "📚 Bibliothèque de tests"])
+
+with tabs[0]:
+    # Zone principale divisée en colonnes
+    col1, col2 = st.columns([3, 2])
+    
+    with col1:
+        st.markdown("""
+            <div class="card">
+                <h3>📤 Chargement des données</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        uploaded_file = st.file_uploader(
+            "Charger un dataset (CSV)",
+            type=['csv'],
+            help="Format accepté : CSV"
+        )
+
+        if uploaded_file:
+            try:
+                df = pd.read_csv(uploaded_file)
+                with st.expander("Aperçu des données"):
+                    st.dataframe(df.head(), use_container_width=True)
+                
+                if len(df.columns) > 0:
+                    target_column = st.selectbox(
+                        "Colonne cible",
+                        df.columns,
+                        help="Sélectionnez la colonne à analyser"
+                    )
+            except Exception as e:
+                st.error(f"Erreur de chargement : {str(e)}")
+
+    with col2:
+        st.markdown("""
+            <div class="card">
+                <h3>⚙️ Configuration du scan</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        scan_type = st.selectbox(
+            "Type de modèle",
+            ["LLM", "Tabular", "NLP", "Vision"],
+            help="Sélectionnez le type de modèle à scanner"
+        )
+
+        if uploaded_file:
+            if st.button("🚀 Lancer le scan", key="scan_button"):
+                with st.spinner('Scan en cours...'):
+                    try:
+                        dataset = Dataset(df, target=target_column)
+                        results = scan(None, dataset)
+                        
+                        # Affichage des résultats dans un conteneur stylisé
+                        st.markdown("""
+                            <div class="results-card">
+                                <h3>📊 Résultats du scan</h3>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        if isinstance(results, dict):
+                            st.json(results)
+                        else:
+                            st.write(results)
+                            
+                    except Exception as e:
+                        st.error(f"Erreur : {str(e)}")
+
+# Sidebar avec informations complémentaires
+with st.sidebar:
+    st.markdown("""
+        <div style="background-color: white; padding: 1rem; border-radius: 8px;">
+            <h4>ℹ️ Information</h4>
+            <p>Giskard version: {}</p>
+        </div>
+    """.format(giskard.__version__), unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
-st.markdown("*Powered by Giskard - Pour plus d'informations, visitez [Giskard Documentation](https://docs.giskard.ai/)*")
+st.markdown("""
+    <div style="text-align: center; color: #666;">
+        <p>Powered by Giskard - <a href="https://docs.giskard.ai/">Documentation</a></p>
+    </div>
+""", unsafe_allow_html=True)
